@@ -1,6 +1,6 @@
 import { NS, Server } from "@ns";
 import { executeBatches, FTimes, GenBatchesResult, HWGWBatch } from "./sh";
-import { availableHackThreads, WEAK_SEC } from "./tenderize";
+import { availableHackThreads, tenderize, WEAK_SEC } from "./tenderize";
 
 function genExpBatch(ns: NS, target: string | Server): GenBatchesResult {
   const server: Server = (typeof target === "string") ? ns.getServer(target) : target;
@@ -38,6 +38,7 @@ function genExpBatch(ns: NS, target: string | Server): GenBatchesResult {
 }
 
 export async function main(ns: NS): Promise<void> {
+  tenderize(ns);
   while (true) {
     const batchResult = genExpBatch(ns, "foodnstuff");
     await executeBatches(ns, batchResult);

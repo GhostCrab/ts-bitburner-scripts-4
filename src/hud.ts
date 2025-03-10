@@ -354,7 +354,7 @@ export async function main(ns: NS) {
       const repGain = workStats.reputation * 5 * (isFocused ? 1 : 0.8);
       repStatsEl.update(`${ns.formatNumber(totalRep, 0, 1000).padStart(4)}/${ns.formatNumber(targetRep, 0, 1000, true)}`, formatTime((repNeeded/repGain) * 1000));
       repProgressEl.update(totalRep, targetRep);
-      shareStatsEl.update(`T:${ns.formatNumber(shareStats.threads, 3, 1000, true)}`, `${ns.formatNumber(ns.getSharePower(), 2)}`);
+      shareStatsEl.update(`T:${ns.formatNumber(shareStats.threads || 0, 3, 1000, true)}`, `${ns.formatNumber(ns.getSharePower() || 0, 2)}`);
     } else if (work?.type === "CREATE_PROGRAM") {
       repStatsEl.color(theme['int'], theme['int']);
       shareStatsEl.color(theme['int'], theme['int']);

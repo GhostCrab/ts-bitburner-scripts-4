@@ -1,6 +1,7 @@
 import { AutocompleteData, FactionWorkType, NS } from "@ns";
 import { getEvals } from "./eval";
 import { joinFaction } from "./faction";
+import { waitForPID } from "./util";
 
 export function autocomplete(data: AutocompleteData, args: string[]) {
   return [...data.servers]; // This script autocompletes the list of servers.
@@ -21,6 +22,8 @@ function processRunning(ns: NS, script: string) {
 export async function main(ns: NS): Promise<void> {
   while (true) {
     if (!processRunning(ns, "shf.js")) {
+      await waitForPID(ns, ns.run("ba.js"));
+      
       let target = "";
       if (ns.args.length > 0) {
         target = ns.args[0].toString();
@@ -32,6 +35,9 @@ export async function main(ns: NS): Promise<void> {
     }
 
     const work = ns.singularity.getCurrentWork();
+
+
+    // await joinFaction(ns, "The Black Hand", "hacking" as FactionWorkType, false);
 
     if (work && work.type === "FACTION" && work.factionName === "NiteSec" && ns.singularity.getFactionRep("NiteSec") > 45000) {
       await joinFaction(ns, "The Black Hand", "hacking" as FactionWorkType, false);

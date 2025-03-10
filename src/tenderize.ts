@@ -43,7 +43,8 @@ export function getServerTree(ns: NS): Host {
 }
 
 export function getServers(ns: NS): Server[] {
-  return flatten(ns, getServerTree(ns));
+  // return flatten(ns, getServerTree(ns)).filter(s => !s.hostname.startsWith("hacknet"));
+  return flatten(ns, getServerTree(ns)).filter(s => !s.hostname.startsWith("hacknet"));
 }
 
 export function getServerAvailableThreads(ns: NS, host: Server|string, useMaxRam = false) {
