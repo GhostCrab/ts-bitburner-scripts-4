@@ -12,7 +12,7 @@ export async function execShare(ns: NS, endTime?: number) {
   let pid = 0;
   let totalThreads = 0
   let maxThreads = Math.floor(availableShareThreads(ns, true));
-  for (const server of getRunnableServers(ns).sort((a, b) => a.maxRam - b.maxRam)) {
+  for (const server of getRunnableServers(ns, false).sort((a, b) => a.maxRam - b.maxRam)) {
     let threads = getServerAvailableShareThreads(ns, server);
     if (threads > maxThreads) {
       threads = maxThreads;
@@ -46,7 +46,7 @@ export async function execShare(ns: NS, endTime?: number) {
       await ns.sleep(MS_BETWEEN_OPERATIONS);
 
       if (endTime && (new Date()).getTime() > endTime) {
-        for (const server of getServers(ns)) {
+        for (const server of getServers(ns, false)) {
           for (const p of ns.ps(server.hostname)) {
             if (p.filename === "share.js") {
               ns.kill(p.pid);

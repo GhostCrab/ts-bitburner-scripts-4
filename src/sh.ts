@@ -134,7 +134,7 @@ function genWGWBatches(ns: NS, target: string | Server): GenBatchesResult {
   const wTime = ns.getWeakenTime(server.hostname);
   const gTime = wTime / 5 * 4;
   
-  let availableThreads = availableHackThreads(ns);
+  let availableThreads = availableHackThreads(ns, false);
   
   if (!serverWeakened(ns, server)) {
     const minDifficulty = server.minDifficulty || 1;
@@ -199,7 +199,7 @@ function genHWGWBatches(ns: NS, target: string | Server, availableThreads?: numb
   const batches: HWGWBatch[] = [];
 
   if (availableThreads === undefined) {
-    availableThreads = availableHackThreads(ns);
+    availableThreads = availableHackThreads(ns, false);
   }
 
   const server: Server = (typeof target === "string") ? ns.getServer(target) : target;
@@ -254,7 +254,7 @@ function growProgressStr(ns: NS, host: string) {
   return `${avail}$/${max}$`;
 }
 
-export async function executeBatches(ns: NS, result: GenBatchesResult) {
+export async function executeBatches(ns: NS, result: GenBatchesResult, includeHacknet: boolean = false) {
   // extract scripts
   const scripts: HWGWScript[] = [];
 
@@ -303,7 +303,7 @@ export async function executeBatches(ns: NS, result: GenBatchesResult) {
   // execute scripts
   let maxExecTime = 0;
   for (const script of scripts) {
-    for (const server of getRunnableServers(ns).sort((a, b) => b.cpuCores - a.cpuCores)) {
+    for (const server of getRunnableServers(ns, includeHacknet).sort((a, b) => b.cpuCores - a.cpuCores)) {
       let threads = getServerAvailableThreads(ns, server);
       const execThreads = Math.min(threads, script.threads);
       script.threads -= execThreads;

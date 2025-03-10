@@ -22,7 +22,7 @@ function genExpBatch(ns: NS, target: string | Server): GenBatchesResult {
     hack: 0,
     hWeaken: 0,
     grow: 0,
-    gWeaken: availableHackThreads(ns),
+    gWeaken: availableHackThreads(ns, true),
     gain: 0,
     timing: timing ,
     hackTarget: 0
@@ -41,6 +41,6 @@ export async function main(ns: NS): Promise<void> {
   tenderize(ns);
   while (true) {
     const batchResult = genExpBatch(ns, "foodnstuff");
-    await executeBatches(ns, batchResult);
+    await executeBatches(ns, batchResult, true);
   }
 }

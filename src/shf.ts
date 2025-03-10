@@ -138,7 +138,7 @@ export async function genHWGWBatches(ns: NS, target: string | Server, availableT
   const batches: HWGWBatch[] = [];
 
   if (availableThreads === undefined) {
-    availableThreads = availableHackThreads(ns);
+    availableThreads = availableHackThreads(ns, false);
   }
 
   const mockServer: Server = (typeof target === "string") ? ns.getServer(target) : target;

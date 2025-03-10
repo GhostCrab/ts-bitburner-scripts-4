@@ -3,7 +3,7 @@ import { getServers } from "./tenderize";
 import { waitForPID } from "./util";
 
 export async function main(ns: NS): Promise<void> {
-  for (const server of getServers(ns)) {
+  for (const server of getServers(ns, true)) {
     ns.killall(server.hostname, true);
   }
   await (ns.sleep(1000));

@@ -33,7 +33,7 @@ export async function getEvals(ns: NS, target?: Server) {
   if (target) {
     targets = [target]
   } else {
-    targets = getServers(ns).filter(s => (s.moneyMax || 0) > 1);
+    targets = getServers(ns, false).filter(s => (s.moneyMax || 0) > 1);
   }
   let serverEvals: ServerEval[] = [];
   for (const target of targets) {
@@ -71,7 +71,7 @@ export async function main(ns: NS): Promise<void> {
   const data = serverEvals.map(s => [
       { color: 'white', text: s.server.hostname },
       { color: 'white', text: s.server.requiredHackingSkill },
-      { color: 'white', text: `${Math.round(ns.getServer(s.server.hostname).hackDifficulty || 0)}/${ns.getServer(s.server.hostname).minDifficulty}` },
+      { color: 'white', text: `${Math.round(ns.getServer(s.server.hostname).hackDifficulty || 0)}/${Math.round(ns.getServer(s.server.hostname).minDifficulty || 0)}` },
       { color: 'white', text: `$${ns.formatNumber(ns.getServer(s.server.hostname).moneyAvailable || 0)}/$${ns.formatNumber(ns.getServer(s.server.hostname).moneyMax || 0)}` },
       { color: 'white', text: `$${ns.formatNumber(s.batches.gain)}`},
       { color: 'white', text: `$${ns.formatNumber(s.rate)}/s`},

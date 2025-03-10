@@ -199,11 +199,11 @@ export async function main(ns: NS): Promise<void> {
 
         hashServerUpgrades = hashServerUpgrades
             .sort((a, b) => b.upgradeValue - a.upgradeValue)
-            //.filter((a) => a.upgradeValue * 1000000000 > 0.15);
+            .filter((a) => a.upgradeValue * 1000000000 > 0.15);
 
         const targetUpgrade = hashServerUpgrades[0];
         if (targetUpgrade) {
-            const port = ns.getPortHandle(2);
+            const port = ns.getPortHandle(3);
             port.clear();
             port.write(JSON.stringify([totalProduction, targetUpgrade]));
 
@@ -226,10 +226,22 @@ export async function main(ns: NS): Promise<void> {
             while (ns.getPlayer().money < targetUpgrade.upgradeCost) {
               while (ns.hacknet.numHashes() > ns.hacknet.hashCost("Sell for Money"))
                 ns.hacknet.spendHashes("Sell for Money");
+
+              if (ns.hacknet.getPurchaseNodeCost() < ns.getPlayer().money) {
+                const cost = ns.hacknet.getPurchaseNodeCost();
+                ns.hacknet.purchaseNode();
+                llog(ns, "%s", `Purchased node for $${ns.formatNumber(cost, 3, 1000, true)}`);
+                break;
+              }
+              
               await ns.sleep(1000);
             }
 
-            targetUpgrade.buy(ns);
+            //targetUpgrade.buy(ns);
+            for (const u of hashServerUpgrades) {
+              if (!u.buy(ns, false))
+                break;
+            }
         } else {
             while (ns.hacknet.numHashes() > ns.hacknet.hashCost("Sell for Money"))
                 ns.hacknet.spendHashes("Sell for Money");

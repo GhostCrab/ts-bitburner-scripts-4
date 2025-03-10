@@ -51,14 +51,14 @@ export class HSUpgrade implements HSUpgradeInterface {
     upgradePayoffTime = 0;
     upgradeValue = 0;
 
-    constructor(ns: NS, id: number, type: HSUpgradeType, _stats: ExtendedNodeStats) {
+    constructor(ns: NS, id: number, type: HSUpgradeType, _stats?: ExtendedNodeStats) {
         const hashBuyCost = ns.hacknet.hashCost("Sell for Money");
         const prodMult = ns.getPlayer().mults.hacknet_node_money;
         const coreCostMult = ns.getPlayer().mults.hacknet_node_core_cost;
         const levelCostMult = ns.getPlayer().mults.hacknet_node_level_cost;
         const ramCostMult = ns.getPlayer().mults.hacknet_node_ram_cost;
 
-        let stats;
+        let stats: ExtendedNodeStats;
         if (_stats) stats = _stats;
         else {
             stats = new ExtendedNodeStats(ns.hacknet.getNodeStats(id));
@@ -134,13 +134,14 @@ export class HSUpgrade implements HSUpgradeInterface {
         );
     }
 
-    buy(ns: NS): boolean {
+    buy(ns: NS, doLog: boolean = true): boolean {
         const hashBuyCost = ns.hacknet.hashCost("Sell for Money");
         const numHashBuys = Math.floor(ns.hacknet.numHashes() / hashBuyCost);
         const effectiveMoneyAvailable = ns.getPlayer().money + numHashBuys * 1000000;
 
         if (effectiveMoneyAvailable < this.upgradeCost) {
-            ns.print("WARNING: Attempted to buy an upgrade you can't afford");
+            if (doLog)
+              ns.print("WARNING: Attempted to buy an upgrade you can't afford");
             return false;
         }
 

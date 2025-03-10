@@ -42,8 +42,9 @@ export function getServerTree(ns: NS): Host {
   return root;
 }
 
-export function getServers(ns: NS): Server[] {
-  // return flatten(ns, getServerTree(ns)).filter(s => !s.hostname.startsWith("hacknet"));
+export function getServers(ns: NS, includeHacknet: boolean): Server[] {
+  if (includeHacknet)
+    return flatten(ns, getServerTree(ns));
   return flatten(ns, getServerTree(ns)).filter(s => !s.hostname.startsWith("hacknet"));
 }
 
@@ -87,16 +88,16 @@ export function getServerAvailableShareThreads(ns: NS, host: Server|string, useM
   return Math.floor(availableRam / SHARE_RAM);
 }
 
-export function availableHackThreads(ns: NS, max: boolean = false): number {
-  return getRunnableServers(ns, max).reduce((t, s) => t + getServerAvailableThreads(ns, s, max), 0);
+export function availableHackThreads(ns: NS, includeHacknet: boolean, max: boolean = false): number {
+  return getRunnableServers(ns, includeHacknet, max).reduce((t, s) => t + getServerAvailableThreads(ns, s, max), 0);
 }
 
-export function availableShareThreads(ns: NS, max: boolean = false): number {
-  return getRunnableServers(ns, max).reduce((t, s) => t + getServerAvailableShareThreads(ns, s, max), 0);
+export function availableShareThreads(ns: NS, includeHacknet: boolean, max: boolean = false): number {
+  return getRunnableServers(ns, includeHacknet, max).reduce((t, s) => t + getServerAvailableShareThreads(ns, s, max), 0);
 }
 
-export function getRunnableServers(ns: NS, max: boolean = false): Server[] {
-  return getServers(ns).filter(s => s.hasAdminRights && getServerAvailableThreads(ns, s, max) > 0);
+export function getRunnableServers(ns: NS, includeHacknet: boolean, max: boolean = false): Server[] {
+  return getServers(ns, includeHacknet).filter(s => s.hasAdminRights && getServerAvailableThreads(ns, s, max) > 0);
 }
 
 function traverse(ns: NS, host: Host, parent: string) {
@@ -165,10 +166,10 @@ export function nuke(ns: NS, server: Server) {
 }
 
 export function tenderize(ns: NS) {
-  let servers = getServers(ns);
+  let servers = getServers(ns, false);
   servers.forEach(server => exploit(ns, server));
 
-  servers = getServers(ns);
+  servers = getServers(ns, true);
   servers.forEach(server => {
     if (nukable(server)) {
       nuke(ns, server);
@@ -182,7 +183,7 @@ export function tenderize(ns: NS) {
 
 export async function main(ns: NS): Promise<void> {
   tenderize(ns);
-  let servers = getServers(ns);
+  let servers = getServers(ns, false);
 
   const data = servers.sort((a,b) => (a.requiredHackingSkill?a.requiredHackingSkill:0) - (b.requiredHackingSkill?b.requiredHackingSkill:0)).map(s => [
       { color: getColor(s), text: s.hostname },

@@ -4,7 +4,7 @@ import { getRunnableServers, getServers } from "./tenderize";
 const SAFE_SCRIPTS = ["ka.js", "hud.js"];
 
 export async function main(ns: NS): Promise<void> {
-  for (const server of getServers(ns)) {
+  for (const server of getServers(ns, true)) {
     if (server.hostname === "home") continue;
     ns.killall(server.hostname);
   }
