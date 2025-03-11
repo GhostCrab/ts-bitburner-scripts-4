@@ -134,11 +134,11 @@ function genHWGWBatch(ns: NS, target: Server, availableThreads: number, hackTarg
   return;
 }
 
-export async function genHWGWBatches(ns: NS, target: string | Server, availableThreads?: number, maxBatch: number = Number.MAX_SAFE_INTEGER, doClimb: boolean = true): Promise<GenBatchesResult>  {
+export async function genHWGWBatches(ns: NS, target: string | Server, availableThreads?: number, maxBatch: number = Number.MAX_SAFE_INTEGER, useHacknet: boolean = false): Promise<GenBatchesResult>  {
   const batches: HWGWBatch[] = [];
 
   if (availableThreads === undefined) {
-    availableThreads = availableHackThreads(ns, false);
+    availableThreads = availableHackThreads(ns, useHacknet);
   }
 
   const mockServer: Server = (typeof target === "string") ? ns.getServer(target) : target;
@@ -185,6 +185,8 @@ export async function main(ns: NS): Promise<void>  {
   //   ns.getServer(target);
   // }
 
+  const useHacknet = false;
+
   let target = "phantasy";
 
   if(typeof ns.args[0] === "string") {
@@ -198,12 +200,12 @@ export async function main(ns: NS): Promise<void>  {
   }
 
   do {
-    const result = await genHWGWBatches(ns, target, undefined, 5000);
+    const result = await genHWGWBatches(ns, target, undefined, 5000, useHacknet);
     ns.tprint(`Hacking ${target} for $${ns.formatNumber(result.gain)} over ${ns.tFormat(result.fTimes.weaken + result.fTimes.hwOffset)} in ${result.batches.length} cycles`);
-    await executeBatches(ns, result);
+    await executeBatches(ns, result, useHacknet);
 
     while(ns.singularity.upgradeHomeRam());
     await waitForPID(ns, ns.run("pserver.js", 1, 1));
-    await waitForPID(ns, ns.run("cct.js"));
+    // await waitForPID(ns, ns.run("cct.js"));
   } while (false);
 }

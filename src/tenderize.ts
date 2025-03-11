@@ -43,7 +43,7 @@ export function getServerTree(ns: NS): Host {
 }
 
 export function getServers(ns: NS, includeHacknet: boolean): Server[] {
-  // if (includeHacknet)
+  if (includeHacknet)
     return flatten(ns, getServerTree(ns));
   return flatten(ns, getServerTree(ns)).filter(s => !s.hostname.startsWith("hacknet"));
 }

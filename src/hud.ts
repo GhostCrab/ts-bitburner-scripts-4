@@ -230,7 +230,7 @@ export async function main(ns: NS) {
   ns.disableLog("ALL");
   await ns.sleep(500);
 
-  setInterval(() => {
+  const toggleHandler = setInterval(() => {
     if (toggleCycle === 0) toggleCycle = 1;
     else if (toggleCycle === 1) toggleCycle = 0;
   }, 4000);
@@ -240,7 +240,10 @@ export async function main(ns: NS) {
   const removeByClassName = (sel: string) => doc.querySelectorAll(sel).forEach(el => el.remove());
   removeByClassName('.HUD_el');
   
-  ns.atExit(function () { removeByClassName('.HUD_el'); });
+  ns.atExit(() => { 
+    removeByClassName('.HUD_el');
+    clearInterval(toggleHandler);
+  });
 
   const args = ns.flags([["help", false]]);
   if (args.help) {

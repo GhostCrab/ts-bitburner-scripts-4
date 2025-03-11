@@ -188,29 +188,13 @@ export async function main(ns: NS): Promise<void> {
   ns.disableLog("disableLog");
   ns.disableLog("ALL");
 
-  const hns = new HNServer(ns, 0);
-  const rateBefore = hns.gainRate(ns);
-  ns.tprintf(`${hns.toString()} / ${hns.gainRate(ns)}`);
-
-  ns.tprintf(hsUpgradeStr(ns, hns.upgradeStats(ns, HSUpgradeType.LEVEL)));
-
-  ns.tprintf(ns.formatNumber(ns.hacknet.getLevelUpgradeCost(0), 3, 1000, true));
-  hns.level += 1;
-
-  const rateAfter = hns.gainRate(ns);
-  ns.tprintf(
-    `${hns.toString()} / ${hns.gainRate(ns)} +${rateAfter - rateBefore}`
-  );
-
-  ns.tprintf(hsUpgradeStr(ns, hns.upgradeStats(ns, HSUpgradeType.LEVEL)));
-  ns.tprintf("==========================");
-
   while (true) {
     let hashServerUpgrades: HSUpgrade[] = [];
     for (let id = 0; id < ns.hacknet.numNodes(); id++) {
       const hns = new HNServer(ns, id);
       Object.keys(HSUpgradeType).forEach((key) => {
         if (key !== "CACHE" && key != "SERVER") {
+        // if (key === "RAM") {
           hashServerUpgrades.push(
             hns.upgradeStats(ns, HSUpgradeType[key as HSUpgradeType])
           );
