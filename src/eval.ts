@@ -37,13 +37,13 @@ export async function getEvals(ns: NS, target?: Server) {
   }
   let serverEvals: ServerEval[] = [];
   for (const target of targets) {
-    const initBatches = await genHWGWBatches(ns, target, availableHackThreads(ns, true), 10, false);
+    const initBatches = await genHWGWBatches(ns, target, availableHackThreads(ns, false, true), 10, false);
 
     // if (initBatches.fTimes.weaken > 1000 * 60 * 10) continue;
 
     target.hackDifficulty = target.minDifficulty;
     target.moneyAvailable = target.moneyMax;
-    const batches = await genHWGWBatches(ns, target, availableHackThreads(ns, true), 1000, false);
+    const batches = await genHWGWBatches(ns, target, availableHackThreads(ns, false, true), 1000, false);
     serverEvals.push({
       server: target,
       initBatches: initBatches,

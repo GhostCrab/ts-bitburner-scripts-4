@@ -1,13 +1,14 @@
 import { AutocompleteData, FactionWorkType, NS } from "@ns";
 import { getEvals } from "./eval";
 import { joinFaction } from "./faction";
+import { tenderize } from "./tenderize";
 import { waitForPID } from "./util";
 
 export function autocomplete(data: AutocompleteData, args: string[]) {
   return [...data.servers]; // This script autocompletes the list of servers.
 }
 
-function processRunning(ns: NS, script: string) {
+export function processRunning(ns: NS, script: string) {
   const procs = ns.ps();
   for (const proc of procs) {
     // ns.tprintf(`Checking ${proc.filename}`);
@@ -22,6 +23,7 @@ function processRunning(ns: NS, script: string) {
 export async function main(ns: NS): Promise<void> {
   while (true) {
     if (!processRunning(ns, "shf.js")) {
+      tenderize(ns);
       await waitForPID(ns, ns.run("ba.js"));
       
       let target = "";

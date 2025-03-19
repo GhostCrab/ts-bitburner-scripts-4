@@ -71,7 +71,8 @@ export class Aug implements IAug{
     this.preqreqs.filter(a => !ns.singularity.getOwnedAugmentations(true).includes(a)).sort((a, b) => ns.singularity.getAugmentationBasePrice(b) - ns.singularity.getAugmentationBasePrice(a));
 
     this.isHack = this.categories.includes('hack');
-    this.isUseful = this.categories.includes('hack') || this.categories.includes('charisma') || this.categories.includes('company') || this.categories.includes('faction') || this.categories.includes('program') || this.categories.includes('special');
+    // this.isUseful = this.categories.includes('hack') || this.categories.includes('charisma') || this.categories.includes('company') || this.categories.includes('faction') || this.categories.includes('program') || this.categories.includes('special');
+    this.isUseful = this.categories.includes('hack') || this.categories.includes('company') || this.categories.includes('faction') || this.categories.includes('program') || this.categories.includes('special');
   }
 
   updateCategories(): void {
@@ -373,7 +374,7 @@ export async function prepFactionForBuyout(ns: NS, faction: string, doBuy: boole
   }
 
   const augs: Aug[] = ns.singularity.getAugmentationsFromFaction(faction).map(a => new Aug(ns, a, faction))
-    // .filter(a => a.isUseful)
+    .filter(a => a.isUseful)
     .filter(a => !a.purchased)
     .sort((a, b) => b.requiredRep - a.requiredRep);
 
@@ -386,6 +387,10 @@ export async function prepFactionForBuyout(ns: NS, faction: string, doBuy: boole
   const currentRep = ns.singularity.getFactionRep(faction);
   const requiredAdditionalRep = aug.requiredRep - currentRep;
   const repCost = ((1 / ns.formulas.reputation.repFromDonation(1, ns.getPlayer())) * requiredAdditionalRep) + 1000;
+
+  if (requiredAdditionalRep < 0) {
+    return true;
+  }
 
   if (ns.getPlayer().money < aug.price + repCost || !doBuy) {
     ns.tprintf(`${faction}|${aug.name}: ${cashStr(ns, aug.price + repCost)} (${cashStr(ns, aug.price)} + ${cashStr(ns, repCost)})`);
@@ -417,7 +422,7 @@ export async function main(ns: NS): Promise<void> {
   const nfgPriceMultiplier = 1.14;
   let augs: IAug[] = [];
   for (const faction of ALL_FACTIONS.sort((a, b) => ns.singularity.getFactionRep(b) - ns.singularity.getFactionRep(a))) {
-    if (ns.singularity.getFactionRep(faction) === 0 && ns.singularity.getFactionFavor(faction) === 0) continue;
+    // if (ns.singularity.getFactionRep(faction) === 0 && ns.singularity.getFactionFavor(faction) === 0) continue;
     if (ns.singularity.getFactionFavor(faction) >= ns.getFavorToDonate()) {
       const result = await prepFactionForBuyout(ns, faction, doBuy);
     }
@@ -429,7 +434,7 @@ export async function main(ns: NS): Promise<void> {
   }
 
   //augs = augs.filter(a => a.canBuy() || a.purchased).sort((a, b) => b.price - a.price);
-  // augs = augs.filter(a => a.isUseful);
+  augs = augs.filter(a => a.isUseful);
   augs = augs.sort((a, b) => b.price - a.price);
 
   //augs = augs.filter(a => a.isHack);
@@ -511,7 +516,7 @@ export async function main(ns: NS): Promise<void> {
 
   const faction = ALL_FACTIONS.sort((a, b) => ns.singularity.getFactionRep(b) - ns.singularity.getFactionRep(a))[0];
   const neuroAug = new Aug(ns, "NeuroFlux Governor", faction);
-  ns.tprintf(`Next ${neuroAug.name} costs $${ns.formatNumber(neuroAug.price, undefined, undefined, true)}`);
+  ns.tprintf(`Next ${neuroAug.name} costs $${ns.formatNumber(neuroAug.price, undefined, undefined, true)} / ${ns.formatNumber(neuroAug.requiredRep)} rep`);
 }
 
 function purchaseAugmentation(ns: NS, aug?: IAug): boolean {

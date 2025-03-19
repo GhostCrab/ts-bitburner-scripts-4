@@ -63,7 +63,7 @@ function generateNewServerValue(ns: NS): HSUpgrade | undefined {
             0,
             stats.ram,
             stats.cores,
-            ns.getBitNodeMultipliers().HacknetNodeMoney
+            ns.getBitNodeMultipliers().HacknetNodeMoney * ns.getPlayer().mults.hacknet_node_money
         );
         const newCost = stats.totalCost + newBestUpgrade.upgradeCost;
         const newValue = newProduction / newCost;
@@ -121,7 +121,7 @@ export async function main(ns: NS): Promise<void> {
             0,
             stats.ram,
             stats.cores,
-            ns.getBitNodeMultipliers().HacknetNodeMoney
+            ns.getBitNodeMultipliers().HacknetNodeMoney * ns.getPlayer().mults.hacknet_node_money
         );
 
         prodCalc += stats.production;

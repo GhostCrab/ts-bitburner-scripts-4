@@ -33,7 +33,9 @@ export class ExtendedNodeStats {
             zeroRamUsed ? 0 : this.ramUsed,
             this.ram,
             this.cores,
-            ns.getBitNodeMultipliers().HacknetNodeMoney
+            ns.getBitNodeMultipliers().HacknetNodeMoney * ns.getPlayer().mults.hacknet_node_money
         );
+
+        ns.formulas.hacknetServers.constants
     }
 }

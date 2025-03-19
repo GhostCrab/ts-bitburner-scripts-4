@@ -57,7 +57,7 @@ function genHWGWBatch(ns: NS, target: Server, availableThreads: number, hackTarg
 
     target.hackDifficulty = Math.max(minDifficulty, hackDifficulty - (weakenThreads * WEAK_SEC));
 
-    // ns.tprint(`0/0/0/${weakenThreads} (${weakenThreads}/${availableThreads})`);
+    // ns.tprintf(`0/0/0/${weakenThreads} (${weakenThreads}/${availableThreads})`);
 
     return {
       hack: 0,
@@ -85,7 +85,7 @@ function genHWGWBatch(ns: NS, target: Server, availableThreads: number, hackTarg
       ns.formulas.hacking.growAmount(target, ns.getPlayer(), growThreads)
     );
 
-    // ns.tprint(`0/0/${growThreads}/${growWeakenThreads} (${growThreads+growWeakenThreads}/${availableThreads})`);
+    // ns.tprintf(`0/0/${growThreads}/${growWeakenThreads} (${growThreads+growWeakenThreads}/${availableThreads})`);
 
     return {
       hack: 0,
@@ -116,7 +116,7 @@ function genHWGWBatch(ns: NS, target: Server, availableThreads: number, hackTarg
 
     const totalThreads = hackThreads + growThreads + growWeakenThreads + hackWeakenThreads;
     if (totalThreads <= availableThreads) {
-      // ns.tprint(`${hackThreads}/${hackWeakenThreads}/${growThreads}/${growWeakenThreads} (${totalThreads}/${availableThreads}) -- $${ns.formatNumber(hackPerThread * hackThreads * (target.moneyAvailable || 1))} (${hackTarget.toFixed(3)}%)`);
+      // ns.tprintf(`${hackThreads}/${hackWeakenThreads}/${growThreads}/${growWeakenThreads} (${totalThreads}/${availableThreads}) -- $${ns.formatNumber(hackPerThread * hackThreads * (target.moneyAvailable || 1))} (${hackTarget.toFixed(3)}%)`);
       return {
         hack: hackThreads,
         hWeaken: hackWeakenThreads,
@@ -144,7 +144,7 @@ export async function genHWGWBatches(ns: NS, target: string | Server, availableT
   const mockServer: Server = (typeof target === "string") ? ns.getServer(target) : target;
   const fTimes = getFTimes(ns, mockServer);
   let batch: HWGWBatch|undefined;
-  const baseHackTarget = 0.10;
+  const baseHackTarget = 0.2;
   while (availableThreads > 10 && batches.length < maxBatch) {
     if (batches.length % 997 === 0) await ns.sleep(1);
 
@@ -195,13 +195,13 @@ export async function main(ns: NS): Promise<void>  {
   }
 
   if (ns.getPlayer().skills.hacking < (ns.getServer(target).requiredHackingSkill || 0)) {
-    ns.tprint(`ERROR: Hack skill too low to hack ${target} (${ns.getPlayer().skills.hacking} < ${ns.getServer(target).requiredHackingSkill})`);
+    ns.tprintf(`ERROR: Hack skill too low to hack ${target} (${ns.getPlayer().skills.hacking} < ${ns.getServer(target).requiredHackingSkill})`);
     return;
   }
 
   do {
     const result = await genHWGWBatches(ns, target, undefined, 5000, useHacknet);
-    ns.tprint(`Hacking ${target} for $${ns.formatNumber(result.gain)} over ${ns.tFormat(result.fTimes.weaken + result.fTimes.hwOffset)} in ${result.batches.length} cycles`);
+    ns.tprintf(`Hacking ${target} for $${ns.formatNumber(result.gain)} over ${ns.tFormat(result.fTimes.weaken + result.fTimes.hwOffset)} in ${result.batches.length} cycles`);
     await executeBatches(ns, result, useHacknet);
 
     while(ns.singularity.upgradeHomeRam());

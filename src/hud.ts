@@ -271,6 +271,8 @@ export async function main(ns: NS) {
   const repStatsEl = new DoubleElement();
   const shareStatsEl = new DoubleElement();
   const repProgressEl = new ProgressElement();
+  //
+  const hnStatsEl = new DoubleElement();
   new DividerElement();
 
   let hackStats: HackStats = { target: "", begin: 0, start: 0, end: 0, gainRate: 0 };
@@ -353,7 +355,7 @@ export async function main(ns: NS) {
         ns.singularity.getFactionRep(work.factionName) :
         ns.singularity.getFactionRep(work.factionName) + ns.formulas.reputation.calculateFavorToRep(ns.singularity.getFactionFavor(work.factionName));
       const repNeeded = Math.max(targetRep - totalRep, 0);
-      const isFocused = ns.singularity.isFocused();// || ns.singularity.getOwnedAugmentations().includes('Neuroreceptor Management Implant');
+      const isFocused = ns.singularity.isFocused() || ns.singularity.getOwnedAugmentations().includes('Neuroreceptor Management Implant');
       const repGain = workStats.reputation * 5 * (isFocused ? 1 : 0.8);
       repStatsEl.update(`${ns.formatNumber(totalRep, 0, 1000).padStart(4)}/${ns.formatNumber(targetRep, 0, 1000, true)}`, formatTime((repNeeded/repGain) * 1000));
       repProgressEl.update(totalRep, targetRep);
@@ -372,6 +374,29 @@ export async function main(ns: NS) {
       repStatsEl.reset();
       repProgressEl.update(100);
       shareStatsEl.reset();
+    }
+
+    let prodCalc = 0;
+    for (let idx = 0; idx < ns.hacknet.numNodes(); idx++) {
+        const stats = ns.hacknet.getNodeStats(idx);
+        stats.ramUsed = 0;
+        stats.production = ns.formulas.hacknetServers.hashGainRate(
+            stats.level,
+            0,
+            stats.ram,
+            stats.cores,
+            ns.getBitNodeMultipliers().HacknetNodeMoney * ns.getPlayer().mults.hacknet_node_money
+        );
+
+        prodCalc += stats.production;
+    }
+
+    if (prodCalc > 0) {
+      hnStatsEl.color(theme['disabled']);
+      hnStatsEl.update(`H: ${ns.formatNumber(ns.hacknet.numHashes(), 0)}`, `${ns.formatNumber(prodCalc, 2)}/s`)
+    } else {
+      hnStatsEl.color(theme['combat']);
+      hnStatsEl.reset();
     }
 
     await ns.sleep(500);

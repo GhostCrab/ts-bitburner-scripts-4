@@ -1,4 +1,7 @@
 import { HacknetServerConstants, NodeStats, NS } from "@ns";
+import { formatTime } from "./eval";
+
+const prodLimit = 0.005;
 
 export enum HSUpgradeType {
   LEVEL = "LEVEL",
@@ -40,12 +43,12 @@ class HNServer implements NodeStats {
     try {
       Object.assign(this, ns.hacknet.getNodeStats(this.id));
     } catch (e) {
-      ns.tprintf(`ERROR: ${this.id} is not a valid hacknet node id`);
+      ns.printf(`ERROR: ${this.id} is not a valid hacknet node id`);
     }
   }
 
   toString() {
-    return `${this.id}: ${this.level} ${this.ram} ${this.cores} ${this.production} ${this.totalProduction}`;
+    return `${this.id.toString().padStart(2, " ")}: ${this.level} ${this.ram} ${this.cores} ${this.production} ${this.totalProduction}`;
   }
 
   gainRate(ns: NS) {
@@ -59,7 +62,7 @@ class HNServer implements NodeStats {
   }
 
   upgradeStats(ns: NS, type: HSUpgradeType): HSUpgrade {
-    const prodMult = ns.getPlayer().mults.hacknet_node_money;
+    const prodMult = ns.getPlayer().mults.hacknet_node_money * ns.getBitNodeMultipliers().HacknetNodeMoney;
     const coreCostMult = ns.getPlayer().mults.hacknet_node_core_cost;
     const levelCostMult = ns.getPlayer().mults.hacknet_node_level_cost;
     const ramCostMult = ns.getPlayer().mults.hacknet_node_ram_cost;
@@ -123,6 +126,7 @@ class HNServer implements NodeStats {
     }
 
     const productionIncrease = productionTotal - this.production;
+    const productionValue = productionIncrease / cost;
 
     return {
       id: this.id,
@@ -130,7 +134,8 @@ class HNServer implements NodeStats {
       cost: cost,
       productionIncrease: productionIncrease,
       productionTotal: productionTotal,
-      productionValue: productionIncrease / cost,
+      productionValue: productionValue,
+      normProdVal: productionValue * 1000000000
     };
   }
 }
@@ -142,21 +147,47 @@ interface HSUpgrade {
   productionIncrease: number;
   productionTotal: number;
   productionValue: number;
+  normProdVal: number;
+}
+
+function totalProduction(ns: NS) {
+  let prodCalc = 0;
+  for (let idx = 0; idx < ns.hacknet.numNodes(); idx++) {
+      const stats = ns.hacknet.getNodeStats(idx);
+      stats.ramUsed = 0;
+      stats.production = ns.formulas.hacknetServers.hashGainRate(
+          stats.level,
+          0,
+          stats.ram,
+          stats.cores,
+          ns.getBitNodeMultipliers().HacknetNodeMoney * ns.getPlayer().mults.hacknet_node_money
+      );
+
+      prodCalc += stats.production;
+  }
+
+  return prodCalc;
+}
+
+function totalProductionCash(ns: NS) {
+  return (totalProduction(ns) / 4) * 1000000;
 }
 
 function hsUpgradeStr(ns: NS, u: HSUpgrade) {
-  return `${u.id} => ${u.type} ${ns.formatNumber(u.cost, 1)} +${u.productionIncrease.toFixed(3)}`;
+  const timeToBuy = u.cost / totalProductionCash(ns);
+  return `${u.id.toString().padStart(2, " ")} => ${u.type.padStart(6, " ")} ${("$" + ns.formatNumber(u.cost, 1)).padStart(7, " ")} +${u.productionIncrease.toFixed(3)} ${formatTime(timeToBuy * 1000)} ${ns.formatNumber(u.normProdVal)}`;
 }
 
 function newServerUpgrade(ns: NS): HSUpgrade {
-  const prod = ns.formulas.hacknetServers.hashGainRate(1, 0, 1, 1, ns.getPlayer().mults.hacknet_node_money)
+  const prod = ns.formulas.hacknetServers.hashGainRate(1, 0, 1, 1, ns.getPlayer().mults.hacknet_node_money * ns.getBitNodeMultipliers().HacknetNodeMoney);
   return {
     id: ns.hacknet.numNodes(),
     type: HSUpgradeType.SERVER,
     cost: ns.hacknet.getPurchaseNodeCost(),
     productionIncrease: prod,
     productionTotal: prod,
-    productionValue: 1
+    productionValue: 1,
+    normProdVal: 1,
   }
 }
 
@@ -188,6 +219,8 @@ export async function main(ns: NS): Promise<void> {
   ns.disableLog("disableLog");
   ns.disableLog("ALL");
 
+  ns.ui.openTail();
+
   while (true) {
     let hashServerUpgrades: HSUpgrade[] = [];
     for (let id = 0; id < ns.hacknet.numNodes(); id++) {
@@ -208,11 +241,16 @@ export async function main(ns: NS): Promise<void> {
 
     let upgrade = hashServerUpgrades.shift();
     if (upgrade === undefined) {
-      ns.tprintf(`No Hacknet Upgrades Left`);
+      ns.printf(`No Hacknet Upgrades Left`);
       return;
     }
 
-    ns.tprintf(hsUpgradeStr(ns, upgrade));
+    if (upgrade.normProdVal < prodLimit) {
+      ns.printf(`Value insufficient for further upgrades (${upgrade.normProdVal} < ${prodLimit.toFixed(3)}`);
+      return;
+    }
+
+    ns.printf(hsUpgradeStr(ns, upgrade));
     while (true) {
       if (upgrade.cost < ns.getPlayer().money) {
         hsUpgradeBuy(ns, upgrade);

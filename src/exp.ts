@@ -41,6 +41,6 @@ export async function main(ns: NS): Promise<void> {
   tenderize(ns);
   while (true) {
     const batchResult = genExpBatch(ns, "foodnstuff");
-    await executeBatches(ns, batchResult, true);
+    await executeBatches(ns, batchResult, false);
   }
 }
