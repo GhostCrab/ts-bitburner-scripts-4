@@ -1,7 +1,7 @@
 import { HacknetServerConstants, NodeStats, NS } from "@ns";
 import { formatTime } from "./eval";
 
-const prodLimit = 0.005;
+const prodLimit = 0.0005;
 
 export enum HSUpgradeType {
   LEVEL = "LEVEL",

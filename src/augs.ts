@@ -72,7 +72,7 @@ export class Aug implements IAug{
 
     this.isHack = this.categories.includes('hack');
     // this.isUseful = this.categories.includes('hack') || this.categories.includes('charisma') || this.categories.includes('company') || this.categories.includes('faction') || this.categories.includes('program') || this.categories.includes('special');
-    this.isUseful = this.categories.includes('hack') || this.categories.includes('company') || this.categories.includes('faction') || this.categories.includes('program') || this.categories.includes('special');
+    this.isUseful = this.categories.includes('hack') || this.categories.includes('company') || this.categories.includes('faction') || this.categories.includes('program') || this.categories.includes('special') || this.categories.includes('hakcnet');
   }
 
   updateCategories(): void {
@@ -374,7 +374,7 @@ export async function prepFactionForBuyout(ns: NS, faction: string, doBuy: boole
   }
 
   const augs: Aug[] = ns.singularity.getAugmentationsFromFaction(faction).map(a => new Aug(ns, a, faction))
-    .filter(a => a.isUseful)
+    // .filter(a => a.isUseful)
     .filter(a => !a.purchased)
     .sort((a, b) => b.requiredRep - a.requiredRep);
 
@@ -422,7 +422,7 @@ export async function main(ns: NS): Promise<void> {
   const nfgPriceMultiplier = 1.14;
   let augs: IAug[] = [];
   for (const faction of ALL_FACTIONS.sort((a, b) => ns.singularity.getFactionRep(b) - ns.singularity.getFactionRep(a))) {
-    // if (ns.singularity.getFactionRep(faction) === 0 && ns.singularity.getFactionFavor(faction) === 0) continue;
+    if (ns.singularity.getFactionRep(faction) === 0 && ns.singularity.getFactionFavor(faction) === 0) continue;
     if (ns.singularity.getFactionFavor(faction) >= ns.getFavorToDonate()) {
       const result = await prepFactionForBuyout(ns, faction, doBuy);
     }
@@ -434,7 +434,7 @@ export async function main(ns: NS): Promise<void> {
   }
 
   //augs = augs.filter(a => a.canBuy() || a.purchased).sort((a, b) => b.price - a.price);
-  augs = augs.filter(a => a.isUseful);
+  // augs = augs.filter(a => a.isUseful);
   augs = augs.sort((a, b) => b.price - a.price);
 
   //augs = augs.filter(a => a.isHack);
