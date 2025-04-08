@@ -72,7 +72,7 @@ export class Aug implements IAug{
 
     this.isHack = this.categories.includes('hack');
     // this.isUseful = this.categories.includes('hack') || this.categories.includes('charisma') || this.categories.includes('company') || this.categories.includes('faction') || this.categories.includes('program') || this.categories.includes('special');
-    this.isUseful = this.categories.includes('hack') || this.categories.includes('company') || this.categories.includes('faction') || this.categories.includes('program') || this.categories.includes('special') || this.categories.includes('hakcnet');
+    this.isUseful = this.categories.includes('hack') || this.categories.includes('company') || this.categories.includes('faction') || this.categories.includes('program') || this.categories.includes('special') || this.categories.includes('hacknet');
   }
 
   updateCategories(): void {
@@ -422,7 +422,15 @@ export async function main(ns: NS): Promise<void> {
   const nfgPriceMultiplier = 1.14;
   let augs: IAug[] = [];
   for (const faction of ALL_FACTIONS.sort((a, b) => ns.singularity.getFactionRep(b) - ns.singularity.getFactionRep(a))) {
+    if (faction === "Slum Snakes") continue;
     if (ns.singularity.getFactionRep(faction) === 0 && ns.singularity.getFactionFavor(faction) === 0) continue;
+
+    let targetRep = ns.formulas.reputation.calculateFavorToRep(ns.getFavorToDonate());
+    const totalRep = 
+      ns.singularity.getFactionRep(faction) + ns.formulas.reputation.calculateFavorToRep(ns.singularity.getFactionFavor(faction));
+    const repNeeded = Math.max(targetRep - totalRep, 0);
+
+    ns.tprintf(`${faction.padEnd(20, " ")} - rep: ${ns.formatNumber(ns.singularity.getFactionRep(faction)).padStart(8, " ")}[${ns.formatNumber(totalRep).padStart(8, " ")}]/${ns.formatNumber(targetRep)} fav: ${ns.formatNumber(ns.singularity.getFactionFavor(faction))}`)
     if (ns.singularity.getFactionFavor(faction) >= ns.getFavorToDonate()) {
       const result = await prepFactionForBuyout(ns, faction, doBuy);
     }

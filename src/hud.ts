@@ -25,12 +25,20 @@ const nextSibling = hookRootEl?.nextSibling;
 let toggleCycle = 0;
 
 function addEl(el: HTMLElement) {
+  console.log(hookRootEl);
+  console.log(hookRootEl?.parentNode);
+  console.log(nextSibling);
+
   if (nextSibling) {
     hookRootEl?.parentNode?.insertBefore(el, nextSibling);
   }
   else {
     hookRootEl?.parentNode?.appendChild(el);
   }
+}
+
+function log(ns: NS, str: string) {
+  ns.tprintf(str);
 }
 
 class ProgressElement {
@@ -53,7 +61,7 @@ class ProgressElement {
     this.subEl2.classList.add('HUD_el');
 
     this.subEl1.style.margin = '4px 0 0 0';
-  
+    
     addEl(this.rootEl);
   }
 
@@ -262,207 +270,216 @@ export async function main(ns: NS) {
   if (hudErr(ns, hackRootEl === null, 'Unable to find hackRootEl')) return;
   if (hudErr(ns, hackProgressEl === null, 'Unable to find hackProgressEl')) return;
 
-  const clockKarmaEl = new DoubleElement();
-  //new DividerElement();
-  const hackStatsTargetGainEl = new DoubleElement();
-  const hackStatsTimeEl = new DoubleElement();
-  const hackStatsProgressEl = new ProgressElement();
-  //new DividerElement();
-  const repStatsEl = new DoubleElement();
-  const shareStatsEl = new DoubleElement();
-  const repProgressEl = new ProgressElement();
-  //
-  const hnStatsEl = new DoubleElement();
-  new DividerElement();
+  try {
+    const clockKarmaEl = new DoubleElement();
+    //new DividerElement();
+    const hackStatsTargetGainEl = new DoubleElement();
+    const hackStatsTimeEl = new DoubleElement();
+    const hackStatsProgressEl = new ProgressElement();
+    //new DividerElement();
+    const repStatsEl = new DoubleElement();
+    const shareStatsEl = new DoubleElement();
+    const repProgressEl = new ProgressElement();
+    //
+    const hnStatsEl = new DoubleElement();
+    new DividerElement();
 
-  let hackStats: HackStats = { target: "", begin: 0, start: 0, end: 0, gainRate: 0 };
-  let shareStats: ShareStats = { threads: 0, power: 0 };
+    let hackStats: HackStats = { target: "", begin: 0, start: 0, end: 0, gainRate: 0 };
+    let shareStats: ShareStats = { threads: 0, power: 0 };
 
-  const hackStatPort = ns.getPortHandle(1);
-  const shareStatPort = ns.getPortHandle(2);
-  
-  while (true) {
-    const date = new Date();
-
-    clockKarmaEl.update(date.toLocaleTimeString("it-IT"), `k: ${ns.heart.break().toFixed(0)}`);
-
-    if (hackStatPort.peek() !== "NULL PORT DATA")
-      hackStats = JSON.parse(hackStatPort.peek().toString());
-    else
-      hackStats = { target: "", begin: 0, start: 0, end: 0, gainRate: 0 };
-
-    if (shareStatPort.peek() !== "NULL PORT DATA")
-      shareStats = JSON.parse(shareStatPort.peek().toString());
-    else
-      shareStats = { threads: 0, power: 0 };
+    const hackStatPort = ns.getPortHandle(1);
+    const shareStatPort = ns.getPortHandle(2);
     
-    if (hackStats.target !== "" && (date.getTime() - 5000) > hackStats.end)
-      hackStats.target = "";
+    while (true) {
+      const date = new Date();
 
-    if (hackStats.target !== "") {
-      hackStatsTargetGainEl.color(theme['hack'], theme['hack']);
-      hackStatsTimeEl.color(theme['hack'], theme['hack']);
-      hackStatsProgressEl.color(theme['hack']);
+      clockKarmaEl.update(date.toLocaleTimeString("it-IT"), `k: ${ns.heart.break().toFixed(0)}`);
 
-      if (hackStats.target === "SHARE") {
-        hackStatsTargetGainEl.update(hackStats.target, `${ns.formatNumber(hackStats.gainRate, 3, 10000, true)}`);
-      } else {
-        if (toggleCycle === 0) {
-          hackStatsTargetGainEl.update(hackStats.target, `$${ns.formatNumber(hackStats.gainRate / ((hackStats.end - hackStats.start) / 1000), 0, 1000)}/s`);
+      if (hackStatPort.peek() !== "NULL PORT DATA")
+        hackStats = JSON.parse(hackStatPort.peek().toString());
+      else
+        hackStats = { target: "", begin: 0, start: 0, end: 0, gainRate: 0 };
+
+      if (shareStatPort.peek() !== "NULL PORT DATA")
+        shareStats = JSON.parse(shareStatPort.peek().toString());
+      else
+        shareStats = { threads: 0, power: 0 };
+      
+      if (hackStats.target !== "" && (date.getTime() - 5000) > hackStats.end)
+        hackStats.target = "";
+
+      if (hackStats.target !== "") {
+        hackStatsTargetGainEl.color(theme['hack'], theme['hack']);
+        hackStatsTimeEl.color(theme['hack'], theme['hack']);
+        hackStatsProgressEl.color(theme['hack']);
+
+        if (hackStats.target === "SHARE") {
+          hackStatsTargetGainEl.update(hackStats.target, `${ns.formatNumber(hackStats.gainRate, 3, 10000, true)}`);
         } else {
-          hackStatsTargetGainEl.update(hackStats.target, `$${ns.formatNumber(hackStats.gainRate, 0, 1000)}`);
+          if (toggleCycle === 0) {
+            hackStatsTargetGainEl.update(hackStats.target, `$${ns.formatNumber(hackStats.gainRate / ((hackStats.end - hackStats.start) / 1000), 0, 1000)}/s`);
+          } else {
+            hackStatsTargetGainEl.update(hackStats.target, `$${ns.formatNumber(hackStats.gainRate, 0, 1000)}`);
+          }
         }
-      }
-      
-      if (date.getTime() > hackStats.begin) {
-        hackStatsProgressEl.color(theme['cha']);
-        hackStatsTimeEl.color(theme['cha'], theme['cha']);
-
-        const executeTime = hackStats.end - hackStats.begin;
-        hackStatsTimeEl.update(formatTime(executeTime), formatTime(executeTime - (date.getTime() - hackStats.begin)));
-        hackStatsProgressEl.update(date.getTime(), hackStats.end, hackStats.begin);
         
+        if (date.getTime() > hackStats.begin) {
+          hackStatsProgressEl.color(theme['cha']);
+          hackStatsTimeEl.color(theme['cha'], theme['cha']);
+
+          const executeTime = hackStats.end - hackStats.begin;
+          hackStatsTimeEl.update(formatTime(executeTime), formatTime(executeTime - (date.getTime() - hackStats.begin)));
+          hackStatsProgressEl.update(date.getTime(), hackStats.end, hackStats.begin);
+          
+        } else {
+          const executeTime = hackStats.begin - hackStats.start;
+          hackStatsTimeEl.update(formatTime(executeTime), formatTime(executeTime - (date.getTime() - hackStats.start)));
+          hackStatsProgressEl.update(date.getTime(), hackStats.begin, hackStats.start);
+        }
       } else {
-        const executeTime = hackStats.begin - hackStats.start;
-        hackStatsTimeEl.update(formatTime(executeTime), formatTime(executeTime - (date.getTime() - hackStats.start)));
-        hackStatsProgressEl.update(date.getTime(), hackStats.begin, hackStats.start);
+        hackStatsTargetGainEl.color(theme['hack'], theme['hack']);
+        hackStatsTimeEl.color(theme['hack'], theme['hack']);
+        hackStatsProgressEl.color(theme['hack']);
+        
+        hackStatsTargetGainEl.update("NO TARGET", "$0/s");
+        hackStatsTimeEl.reset();
+        hackStatsProgressEl.update(0);
       }
-    } else {
-      hackStatsTargetGainEl.color(theme['hack'], theme['hack']);
-      hackStatsTimeEl.color(theme['hack'], theme['hack']);
-      hackStatsProgressEl.color(theme['hack']);
-      
-      hackStatsTargetGainEl.update("NO TARGET", "$0/s");
-      hackStatsTimeEl.reset();
-      hackStatsProgressEl.update(0);
-    }
 
 
-    const work = ns.singularity.getCurrentWork();
-    // console.log(work);
-    if (work?.type === "FACTION" && ns.fileExists("Formulas.exe")) {
-      repStatsEl.color(theme['rep'], theme['rep']);
-      shareStatsEl.color(theme['rep'], theme['rep']);
-      repProgressEl.color(theme['rep']);
-      
-      const workStats = ns.formulas.work.factionGains(ns.getPlayer(), work.factionWorkType, ns.singularity.getFactionFavor(work.factionName));
-      let targetRep = ns.formulas.reputation.calculateFavorToRep(ns.getFavorToDonate());
-      if (work.factionName === "Tian Di Hui") targetRep = 6250;
-      if (work.factionName === "CyberSec") targetRep = 10000;
-      if (work.factionName === "NiteSec") targetRep = 45000;
-      if (work.factionName === "The Black Hand") targetRep = 100000;
-      const totalRep =  ["Tian Di Hui", "CyberSec", "NiteSec", "The Black Hand"].includes(work.factionName) ? 
-        ns.singularity.getFactionRep(work.factionName) :
-        ns.singularity.getFactionRep(work.factionName) + ns.formulas.reputation.calculateFavorToRep(ns.singularity.getFactionFavor(work.factionName));
-      const repNeeded = Math.max(targetRep - totalRep, 0);
-      const isFocused = ns.singularity.isFocused() || ns.singularity.getOwnedAugmentations().includes('Neuroreceptor Management Implant');
-      const repGain = workStats.reputation * 5 * (isFocused ? 1 : 0.8);
-      repStatsEl.update(`${ns.formatNumber(totalRep, 0, 1000).padStart(4)}/${ns.formatNumber(targetRep, 0, 1000, true)}`, formatTime((repNeeded/repGain) * 1000));
-      repProgressEl.update(totalRep, targetRep);
-      shareStatsEl.update(`T:${ns.formatNumber(shareStats.threads || 0, 3, 1000, true)}`, `${ns.formatNumber(ns.getSharePower() || 0, 2)}`);
-    } else if (work?.type === "CREATE_PROGRAM") {
-      repStatsEl.color(theme['int'], theme['int']);
-      shareStatsEl.color(theme['int'], theme['int']);
-      repProgressEl.color(theme['int']);
-      repStatsEl.update(work.programName, work.cyclesWorked.toString());
-      repProgressEl.update(0);
-      shareStatsEl.reset();
-    } else {
-      repStatsEl.color(theme['int'], theme['int']);
-      shareStatsEl.color(theme['int'], theme['int']);
-      repProgressEl.color(theme['int']);
-      repStatsEl.reset();
-      repProgressEl.update(100);
-      shareStatsEl.reset();
-    }
+      const work = ns.singularity.getCurrentWork();
+      // console.log(work);
+      if (work?.type === "FACTION" && ns.fileExists("Formulas.exe")) {
+        repStatsEl.color(theme['rep'], theme['rep']);
+        shareStatsEl.color(theme['rep'], theme['rep']);
+        repProgressEl.color(theme['rep']);
+        
+        const workStats = ns.formulas.work.factionGains(ns.getPlayer(), work.factionWorkType, ns.singularity.getFactionFavor(work.factionName));
+        let targetRep = ns.formulas.reputation.calculateFavorToRep(ns.getFavorToDonate());
+        if (work.factionName === "Tian Di Hui") targetRep = 6250 * ns.getBitNodeMultipliers().AugmentationRepCost;
+        if (work.factionName === "CyberSec") targetRep = 10000 * ns.getBitNodeMultipliers().AugmentationRepCost;
+        if (work.factionName === "Netburners") targetRep = 12500 * ns.getBitNodeMultipliers().AugmentationRepCost;
+        if (work.factionName === "NiteSec") targetRep = 45000 * ns.getBitNodeMultipliers().AugmentationRepCost;
+        if (work.factionName === "The Black Hand") targetRep = 100000 * ns.getBitNodeMultipliers().AugmentationRepCost;
+        if (work.factionName === "Sector-12") targetRep = 50000 * ns.getBitNodeMultipliers().AugmentationRepCost;
 
-    let prodCalc = 0;
-    for (let idx = 0; idx < ns.hacknet.numNodes(); idx++) {
-        const stats = ns.hacknet.getNodeStats(idx);
-        stats.ramUsed = 0;
-        stats.production = ns.formulas.hacknetServers.hashGainRate(
-            stats.level,
-            0,
-            stats.ram,
-            stats.cores,
-            ns.getBitNodeMultipliers().HacknetNodeMoney * ns.getPlayer().mults.hacknet_node_money
-        );
+        const totalRep =  ["Tian Di Hui", "CyberSec", "NiteSec", "The Black Hand", "Tian Di Hui", "Netburners", "Sector-12"].includes(work.factionName) ? 
+          ns.singularity.getFactionRep(work.factionName) :
+          ns.singularity.getFactionRep(work.factionName) + ns.formulas.reputation.calculateFavorToRep(ns.singularity.getFactionFavor(work.factionName));
+        const repNeeded = Math.max(targetRep - totalRep, 0);
+        const isFocused = ns.singularity.isFocused() || ns.singularity.getOwnedAugmentations().includes('Neuroreceptor Management Implant');
+        const repGain = workStats.reputation * 5 * (isFocused ? 1 : 0.8);
+        repStatsEl.update(`${ns.formatNumber(totalRep, 0, 1000).padStart(4)}/${ns.formatNumber(targetRep, 0, 1000, true)}`, formatTime((repNeeded/repGain) * 1000));
+        repProgressEl.update(totalRep, targetRep);
+        shareStatsEl.update(`T:${ns.formatNumber(shareStats.threads || 0, 3, 1000, true)}`, `${ns.formatNumber(ns.getSharePower() || 0, 2)}`);
+      } else if (work?.type === "CREATE_PROGRAM") {
+        repStatsEl.color(theme['int'], theme['int']);
+        shareStatsEl.color(theme['int'], theme['int']);
+        repProgressEl.color(theme['int']);
+        repStatsEl.update(work.programName, work.cyclesWorked.toString());
+        repProgressEl.update(0);
+        shareStatsEl.reset();
+      } else {
+        repStatsEl.color(theme['int'], theme['int']);
+        shareStatsEl.color(theme['int'], theme['int']);
+        repProgressEl.color(theme['int']);
+        repStatsEl.reset();
+        repProgressEl.update(100);
+        shareStatsEl.reset();
+      }
 
-        prodCalc += stats.production;
-    }
+      let prodCalc = 0;
+      for (let idx = 0; idx < ns.hacknet.numNodes(); idx++) {
+          const stats = ns.hacknet.getNodeStats(idx);
+          stats.ramUsed = 0;
+          stats.production = ns.formulas.hacknetServers.hashGainRate(
+              stats.level,
+              0,
+              stats.ram,
+              stats.cores,
+              // ns.getBitNodeMultipliers().HacknetNodeMoney * ns.getPlayer().mults.hacknet_node_money
+              ns.getPlayer().mults.hacknet_node_money
+          );
 
-    if (prodCalc > 0) {
-      hnStatsEl.color(theme['disabled']);
-      hnStatsEl.update(`H: ${ns.formatNumber(ns.hacknet.numHashes(), 0)}`, `${ns.formatNumber(prodCalc, 2)}/s`)
-    } else {
-      hnStatsEl.color(theme['combat']);
-      hnStatsEl.reset();
-    }
+          prodCalc += stats.production;
+      }
 
-    await ns.sleep(500);
-  }  
- 
-  // if (hook0 === null || hook1 === null) return;
+      if (prodCalc > 0) {
+        hnStatsEl.color(theme['disabled']);
+        hnStatsEl.update(`H: ${ns.formatNumber(ns.hacknet.numHashes(), 3, undefined, true)}`, `${ns.formatNumber(prodCalc, 2)}/s`)
+      } else {
+        hnStatsEl.color(theme['combat']);
+        hnStatsEl.reset();
+      }
 
-  // const theme = ns.ui.getTheme();
-  // ns.tprintf(theme['cha']);
+      await ns.sleep(500);
+    }  
+  
+    // if (hook0 === null || hook1 === null) return;
 
-  // hook0.insertadjacenthtml('beforeend', newrootel.outerhtml);
+    // const theme = ns.ui.getTheme();
+    // ns.tprintf(theme['cha']);
 
-  // await ns.sleep(2000);
-  // removeByClassName('.HUD_el');
-  // while (true) {
-  //   try {
-  //     const player = ns.getPlayer();
+    // hook0.insertadjacenthtml('beforeend', newrootel.outerhtml);
 
-  //     const playerCity = player.city; // city
-  //     const playerLocation = player.location; // location
-  //     const playerKills = player.numPeopleKilled; // numPeopleKilled
-  //     const playerKarma = ns.heart.break();
+    // await ns.sleep(2000);
+    // removeByClassName('.HUD_el');
+    // while (true) {
+    //   try {
+    //     const player = ns.getPlayer();
 
-  //     const purchased_servers = ns.getPurchasedServers(); // get every bought server if exists, else just create our blank array and add home to it.
-  //     purchased_servers.push("home"); // add home to the array.
+    //     const playerCity = player.city; // city
+    //     const playerLocation = player.location; // location
+    //     const playerKills = player.numPeopleKilled; // numPeopleKilled
+    //     const playerKarma = ns.heart.break();
 
-  //     // End paramaters, begin CSS: 
+    //     const purchased_servers = ns.getPurchasedServers(); // get every bought server if exists, else just create our blank array and add home to it.
+    //     purchased_servers.push("home"); // add home to the array.
 
-  //     removeByClassName('.HUD_el');
-  //     theme = ns.ui.getTheme();
-  //     removeByClassName('.HUD_sep');
+    //     // End paramaters, begin CSS: 
 
-  //     hook0.insertAdjacentHTML('beforeend', `<hr class="HUD_sep HUD_el">`);
-  //     hook1.insertAdjacentHTML('beforeend', `<hr class="HUD_sep HUD_el">`);
+    //     removeByClassName('.HUD_el');
+    //     theme = ns.ui.getTheme();
+    //     removeByClassName('.HUD_sep');
 
-  //     // playerCity
-  //     hook0.insertAdjacentHTML('beforeend', `<element class="HUD_GN_C HUD_el" title="The name of the City you are currently in.">City </element><br class="HUD_el">`)
-  //     colorByClassName(".HUD_GN_C", theme['cha'])
-  //     hook1.insertAdjacentHTML('beforeend', `<element class="HUD_GN_C HUD_el">${playerCity + '<br class="HUD_el">'}</element>`)
-  //     colorByClassName(".HUD_GN_C", theme['cha'])
+    //     hook0.insertAdjacentHTML('beforeend', `<hr class="HUD_sep HUD_el">`);
+    //     hook1.insertAdjacentHTML('beforeend', `<hr class="HUD_sep HUD_el">`);
 
-  //     // playerLocation
-  //     hook0.insertAdjacentHTML('beforeend', `<element class="HUD_GN_L HUD_el" title="Your current location inside the city.">Location </element><br class="HUD_el">`)
-  //     colorByClassName(".HUD_GN_L", theme['cha'])
-  //     hook1.insertAdjacentHTML('beforeend', `<element class="HUD_GN_L HUD_el">${playerLocation + '<br class="HUD_el">'}</element>`)
-  //     colorByClassName(".HUD_GN_L", theme['cha'])
+    //     // playerCity
+    //     hook0.insertAdjacentHTML('beforeend', `<element class="HUD_GN_C HUD_el" title="The name of the City you are currently in.">City </element><br class="HUD_el">`)
+    //     colorByClassName(".HUD_GN_C", theme['cha'])
+    //     hook1.insertAdjacentHTML('beforeend', `<element class="HUD_GN_C HUD_el">${playerCity + '<br class="HUD_el">'}</element>`)
+    //     colorByClassName(".HUD_GN_C", theme['cha'])
 
-  //     // playerKarma
-  //     hook0.insertAdjacentHTML('beforeend', `<element class="HUD_Karma_H HUD_el" title="Your karma."><br>Karma &nbsp;&nbsp;&nbsp;</element>`)
-  //     colorByClassName(".HUD_Karma_H", theme['hp'])
-  //     hook1.insertAdjacentHTML('beforeend', `<element class="HUD_Karma HUD_el"><br>${playerKarma}</element>`)
-  //     colorByClassName(".HUD_Karma", theme['hp'])
+    //     // playerLocation
+    //     hook0.insertAdjacentHTML('beforeend', `<element class="HUD_GN_L HUD_el" title="Your current location inside the city.">Location </element><br class="HUD_el">`)
+    //     colorByClassName(".HUD_GN_L", theme['cha'])
+    //     hook1.insertAdjacentHTML('beforeend', `<element class="HUD_GN_L HUD_el">${playerLocation + '<br class="HUD_el">'}</element>`)
+    //     colorByClassName(".HUD_GN_L", theme['cha'])
 
-  //     removeByClassName('.HUD_Kills_H')
+    //     // playerKarma
+    //     hook0.insertAdjacentHTML('beforeend', `<element class="HUD_Karma_H HUD_el" title="Your karma."><br>Karma &nbsp;&nbsp;&nbsp;</element>`)
+    //     colorByClassName(".HUD_Karma_H", theme['hp'])
+    //     hook1.insertAdjacentHTML('beforeend', `<element class="HUD_Karma HUD_el"><br>${playerKarma}</element>`)
+    //     colorByClassName(".HUD_Karma", theme['hp'])
 
-  //     // playerKills
-  //     hook0.insertAdjacentHTML('beforeend', `<element class="HUD_Kills_H HUD_el" title="Your kill count, increases every successful homicide."><br>Kills &nbsp;&nbsp;&nbsp;</element>`)
-  //     colorByClassName(".HUD_Kills_H", theme['hp'])
-  //     removeByClassName('.HUD_Kills')
-  //     hook1.insertAdjacentHTML('beforeend', `<element class="HUD_Kills HUD_el"><br>${playerKills}</element>`)
-  //     colorByClassName(".HUD_Kills", theme['hp'])
-  //   } catch (err) {
-  //     ns.print("ERROR: Update Skipped: " + String(err));
-  //   }
+    //     removeByClassName('.HUD_Kills_H')
 
-  //   ns.atExit(function () { removeByClassName('.HUD_el'); })
-  //   await ns.sleep(200);
-  // }
+    //     // playerKills
+    //     hook0.insertAdjacentHTML('beforeend', `<element class="HUD_Kills_H HUD_el" title="Your kill count, increases every successful homicide."><br>Kills &nbsp;&nbsp;&nbsp;</element>`)
+    //     colorByClassName(".HUD_Kills_H", theme['hp'])
+    //     removeByClassName('.HUD_Kills')
+    //     hook1.insertAdjacentHTML('beforeend', `<element class="HUD_Kills HUD_el"><br>${playerKills}</element>`)
+    //     colorByClassName(".HUD_Kills", theme['hp'])
+    //   } catch (err) {
+    //     ns.print("ERROR: Update Skipped: " + String(err));
+    //   }
+
+    //   ns.atExit(function () { removeByClassName('.HUD_el'); })
+    //   await ns.sleep(200);
+    // }  
+  } catch (e) {
+    ns.tprintf(`ERROR: Unable to anchor to Overview [${e}]`);
+    return;
+  }
 }

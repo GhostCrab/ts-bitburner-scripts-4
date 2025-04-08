@@ -6,7 +6,7 @@ export async function main(ns) {
     for (const contract of contracts) {
       const type = ns.codingcontract.getContractType(contract, server);
       const data = ns.codingcontract.getData(contract, server);
-      ns.tprintf(`${server}: ${contract} | ${type}`);
+      // ns.tprintf(`${server}: ${contract} | ${type}`);
       solve(type, data, server, contract, ns);
     }
   }

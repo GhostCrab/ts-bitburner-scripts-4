@@ -1,7 +1,7 @@
 import { HacknetServerConstants, NodeStats, NS } from "@ns";
 import { formatTime } from "./eval";
 
-const prodLimit = 0.0005;
+const prodLimit = 0.00000000001;
 
 export enum HSUpgradeType {
   LEVEL = "LEVEL",
@@ -11,7 +11,7 @@ export enum HSUpgradeType {
   SERVER = "SERVER",
 }
 
-class HNServer implements NodeStats {
+export class HNServer implements NodeStats {
   id: number;
   // @ts-ignore
   name: string;
@@ -62,13 +62,14 @@ class HNServer implements NodeStats {
   }
 
   upgradeStats(ns: NS, type: HSUpgradeType): HSUpgrade {
-    const prodMult = ns.getPlayer().mults.hacknet_node_money * ns.getBitNodeMultipliers().HacknetNodeMoney;
+    // const prodMult = ns.getPlayer().mults.hacknet_node_money * ns.getBitNodeMultipliers().HacknetNodeMoney;
+    const prodMult = ns.getPlayer().mults.hacknet_node_money;
     const coreCostMult = ns.getPlayer().mults.hacknet_node_core_cost;
     const levelCostMult = ns.getPlayer().mults.hacknet_node_level_cost;
     const ramCostMult = ns.getPlayer().mults.hacknet_node_ram_cost;
 
     let cost: number = 0;
-    let productionTotal: number = 0;
+    let upgradeProduction: number = 0;
 
     switch (type) {
       case HSUpgradeType.LEVEL: {
@@ -77,7 +78,7 @@ class HNServer implements NodeStats {
           1,
           levelCostMult
         );
-        productionTotal = ns.formulas.hacknetServers.hashGainRate(
+        upgradeProduction = ns.formulas.hacknetServers.hashGainRate(
           this.level + 1,
           0,
           this.ram,
@@ -92,7 +93,7 @@ class HNServer implements NodeStats {
           1,
           ramCostMult
         );
-        productionTotal = ns.formulas.hacknetServers.hashGainRate(
+        upgradeProduction = ns.formulas.hacknetServers.hashGainRate(
           this.level,
           0,
           this.ram * 2,
@@ -107,7 +108,7 @@ class HNServer implements NodeStats {
           1,
           coreCostMult
         );
-        productionTotal = ns.formulas.hacknetServers.hashGainRate(
+        upgradeProduction = ns.formulas.hacknetServers.hashGainRate(
           this.level,
           0,
           this.ram,
@@ -118,34 +119,36 @@ class HNServer implements NodeStats {
       }
       case HSUpgradeType.CACHE: {
         cost = ns.formulas.hacknetServers.cacheUpgradeCost(this.cache || 0);
-        productionTotal = this.production;
+        upgradeProduction = this.production;
         // this.cacheIncrease = this.cache;
         // this.cacheCostPerHash = this.upgradeCost / this.cacheIncrease;
         break;
       }
     }
 
-    const productionIncrease = productionTotal - this.production;
+    const productionIncrease = upgradeProduction - this.production;
     const productionValue = productionIncrease / cost;
 
     return {
       id: this.id,
+      server: this,
       type: type,
       cost: cost,
       productionIncrease: productionIncrease,
-      productionTotal: productionTotal,
+      upgradeProduction: upgradeProduction,
       productionValue: productionValue,
       normProdVal: productionValue * 1000000000
     };
   }
 }
 
-interface HSUpgrade {
+export interface HSUpgrade {
   id: number;
+  server?: HNServer;
   type: HSUpgradeType;
   cost: number;
   productionIncrease: number;
-  productionTotal: number;
+  upgradeProduction: number;
   productionValue: number;
   normProdVal: number;
 }
@@ -160,7 +163,8 @@ function totalProduction(ns: NS) {
           0,
           stats.ram,
           stats.cores,
-          ns.getBitNodeMultipliers().HacknetNodeMoney * ns.getPlayer().mults.hacknet_node_money
+          // ns.getBitNodeMultipliers().HacknetNodeMoney * ns.getPlayer().mults.hacknet_node_money
+          ns.getPlayer().mults.hacknet_node_money
       );
 
       prodCalc += stats.production;
@@ -173,19 +177,20 @@ function totalProductionCash(ns: NS) {
   return (totalProduction(ns) / 4) * 1000000;
 }
 
-function hsUpgradeStr(ns: NS, u: HSUpgrade) {
+export function hsUpgradeStr(ns: NS, u: HSUpgrade) {
   const timeToBuy = u.cost / totalProductionCash(ns);
   return `${u.id.toString().padStart(2, " ")} => ${u.type.padStart(6, " ")} ${("$" + ns.formatNumber(u.cost, 1)).padStart(7, " ")} +${u.productionIncrease.toFixed(3)} ${formatTime(timeToBuy * 1000)} ${ns.formatNumber(u.normProdVal)}`;
 }
 
 function newServerUpgrade(ns: NS): HSUpgrade {
-  const prod = ns.formulas.hacknetServers.hashGainRate(1, 0, 1, 1, ns.getPlayer().mults.hacknet_node_money * ns.getBitNodeMultipliers().HacknetNodeMoney);
+  // const prod = ns.formulas.hacknetServers.hashGainRate(1, 0, 1, 1, ns.getPlayer().mults.hacknet_node_money * ns.getBitNodeMultipliers().HacknetNodeMoney);
+  const prod = ns.formulas.hacknetServers.hashGainRate(1, 0, 1, 1, ns.getPlayer().mults.hacknet_node_money);
   return {
     id: ns.hacknet.numNodes(),
     type: HSUpgradeType.SERVER,
     cost: ns.hacknet.getPurchaseNodeCost(),
     productionIncrease: prod,
-    productionTotal: prod,
+    upgradeProduction: prod,
     productionValue: 1,
     normProdVal: 1,
   }
@@ -252,6 +257,7 @@ export async function main(ns: NS): Promise<void> {
 
     ns.printf(hsUpgradeStr(ns, upgrade));
     while (true) {
+      // if (upgrade.cost < ns.getPlayer().money / 1000) {
       if (upgrade.cost < ns.getPlayer().money) {
         hsUpgradeBuy(ns, upgrade);
         break;

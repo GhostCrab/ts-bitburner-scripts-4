@@ -111,8 +111,8 @@ function genHWGWBatch(ns: NS, target: Server, availableThreads: number, hackTarg
     const growThreads = Math.ceil(
       ns.formulas.hacking.growThreads(tmpTarget, ns.getPlayer(), tmpTarget.moneyMax) * 1.5
     );
-    const growWeakenThreads = Math.ceil(growThreads / 12.5);
-    const hackWeakenThreads = Math.ceil(hackThreads / 25);
+    const growWeakenThreads = Math.ceil((growThreads / 12.5) * 1.1);
+    const hackWeakenThreads = Math.ceil((hackThreads / 25) * 1.1);
 
     const totalThreads = hackThreads + growThreads + growWeakenThreads + hackWeakenThreads;
     if (totalThreads <= availableThreads) {
@@ -144,7 +144,7 @@ export async function genHWGWBatches(ns: NS, target: string | Server, availableT
   const mockServer: Server = (typeof target === "string") ? ns.getServer(target) : target;
   const fTimes = getFTimes(ns, mockServer);
   let batch: HWGWBatch|undefined;
-  const baseHackTarget = 0.2;
+  const baseHackTarget = 0.9;
   while (availableThreads > 10 && batches.length < maxBatch) {
     if (batches.length % 997 === 0) await ns.sleep(1);
 
@@ -163,6 +163,20 @@ export async function genHWGWBatches(ns: NS, target: string | Server, availableT
     } else {
       break;
     }
+  }
+
+  if (availableThreads > 0) {
+    fTimes.gwOffset += 1000;
+    batches.push({
+      timing: structuredClone(fTimes),
+      hack: 0,
+      hWeaken: 0,
+      grow: 0,
+      gWeaken: Math.min(availableThreads, 4000),
+    
+      gain: 0,
+      hackTarget: 0,
+    })
   }
 
   return {
@@ -205,7 +219,7 @@ export async function main(ns: NS): Promise<void>  {
     await executeBatches(ns, result, useHacknet);
 
     while(ns.singularity.upgradeHomeRam());
-    await waitForPID(ns, ns.run("pserver.js", 1, 1));
-    // await waitForPID(ns, ns.run("cct.js"));
+    // await waitForPID(ns, ns.run("pserver.js", 1, 1));
+    await waitForPID(ns, ns.run("cct.js"));
   } while (false);
 }

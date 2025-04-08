@@ -68,6 +68,7 @@ export async function main(ns: NS): Promise<void> {
     while (true) {
       const slaves = getSlaves(ns).filter(s => s.upgradeCost <= ns.getPlayer().money).sort((a, b) => a.rate - b.rate);
       if (slaves.length > 0) {
+        // if (slaves[0].upgradeCost > 200000000000) return;
         slaves[0].upgrade(ns);
         didUpgrade = true;
         continue;
@@ -85,7 +86,7 @@ export async function main(ns: NS): Promise<void> {
     }
   } else {
     for (const slave of getSlaves(ns).sort((a, b) => a.rate - b.rate)) {
-      // ns.tprintf(`${serverName}: ${ns.formatRam(ram)} ${ramPow} || $${ns.formatNumber(ns.getPurchasedServerCost(ram))} => $${ns.formatNumber(ns.getPurchasedServerCost(nextRam))} || upgrade: $${ns.formatNumber(ns.getPurchasedServerUpgradeCost(serverName, nextRam))}`);
+      // ns.tprintf(`${slave.server.hostname}: ${ns.formatRam(slave.ram)} ${slave.ramPow} || $${ns.formatNumber(ns.getPurchasedServerCost(slave.ram))} => $${ns.formatNumber(ns.getPurchasedServerCost(slave.nextRam))} || upgrade: $${ns.formatNumber(ns.getPurchasedServerUpgradeCost(slave.server.hostname, slave.nextRam))}`);
   
       ns.tprintf(slave.toStr(ns));
     }
